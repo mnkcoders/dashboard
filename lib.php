@@ -26,6 +26,7 @@ class Dashboard{
         $this->_chars = $char;
         $this->_url = $this->input();
         $this->addApp('phpmyadmin', 'Php My Admin');
+        $this->addApp('server.php', 'Server');
     }
     /**
      * @param string $name
