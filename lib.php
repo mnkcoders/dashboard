@@ -18,6 +18,10 @@ class Dashboard{
      */
     private $_apps = array();
     /**
+     * @var array
+     */
+    private $_excluded = array();
+    /**
      * @param string $path
      * @param int $char
      */
@@ -26,16 +30,26 @@ class Dashboard{
         $this->_chars = $char;
         $this->_url = $this->input();
         $this->addApp('phpmyadmin', 'Php My Admin');
-        $this->addApp('server.php', 'Server');
+        //$this->addApp('server.php', 'Server');
     }
     /**
      * @param string $name
      * @param string $title
      * @return \Dashboard
      */
-    private function addApp($name = '', $title = ''){
+    public function addApp($name = '', $title = ''){
         if(strlen($name) && !array_key_exists($name,$this->_apps)){
             $this->_apps[$name] = strlen($title) ? $title : $name;
+        }
+        return $this;
+    }
+    /**
+     * @param string $list
+     * @return \Dashboard
+     */
+    public function exclude(array $list = array()){
+        foreach($list as $folder ){
+            $this->_excluded[] = $folder;
         }
         return $this;
     }
@@ -174,14 +188,16 @@ class Dashboard{
         if($this->isLib()){
             return array();
         }
-        $list = array_map(function($folder){
-            return preg_replace('/\\\\/', '/', $folder);
-        }, glob( $this->path(). '/*'));
-        $root = $this->root();
+
         $folders = array();
-        foreach ($list as $folder ){
-            if(is_dir($folder) && $folder !== $root){
-                $folders[] = basename($folder);
+        $dir = glob( $this->path(). '/*');
+        foreach ($dir as $file ){
+            $folder = preg_replace('/\\\\/', '/', $file);
+            if(is_dir($folder) && $folder !== $this->root()){
+                $name =  basename($folder);
+                if(!$this->excluded($name)){
+                    $folders[] = $name;
+                }
             }
         }
         return $folders;
@@ -204,6 +220,12 @@ class Dashboard{
      */
     private function getHost() {
         return 'http://localhost/';
+    }
+    /**
+     * @return bool
+     */
+    private function excluded($folder){
+        return in_array($folder,$this->_excluded);
     }
     /**
      * @param bool $localhost
