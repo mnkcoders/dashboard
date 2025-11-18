@@ -61,7 +61,6 @@ class Dashboard{
                 && preg_match('/.php$/', strtolower($file))
                     && basename($file) !== 'index.php';
         });
-        var_dump($list);
         foreach ($list as $file ){
             $app = basename($file);
             $name = preg_replace('/_/',' ',explode('.', $app)[0]);
