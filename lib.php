@@ -14,6 +14,10 @@ class Dashboard{
      */
     private $_chars = 20;
     /**
+     * @var bool
+     */
+    private $_scanapps = false;
+    /**
      * @var array
      */
     private $_apps = array();
@@ -23,14 +27,19 @@ class Dashboard{
     private $_excluded = array();
     /**
      * @param string $path
+     * @param bool $scan
      * @param int $char
      */
-    protected function __construct( $path = '' , $char = 20) {
+    protected function __construct( $path = '' , $scan = false, $char = 20) {
         $this->_path = $path;
         $this->_chars = $char;
         $this->_url = $this->input();
         $this->addApp('phpmyadmin', 'Php My Admin');
         //$this->addApp('server.php', 'Server');
+        
+        if($scan){
+            $this->scanApps();
+        }
     }
     /**
      * @param string $name
@@ -43,6 +52,24 @@ class Dashboard{
         }
         return $this;
     }
+    /**
+     * @return \Dashboard
+     */
+    private function scanApps(){
+        $list = array_filter(glob( $this->path(). '/*'),function($file){
+            return filetype($file) === 'file'
+                && preg_match('/.php$/', strtolower($file))
+                    && basename($file) !== 'index.php';
+        });
+        var_dump($list);
+        foreach ($list as $file ){
+            $app = basename($file);
+            $name = preg_replace('/_/',' ',explode('.', $app)[0]);
+            $this->addApp($app, $name);
+        }
+        return $this;
+    }
+
     /**
      * @param string $list
      * @return \Dashboard
@@ -62,10 +89,12 @@ class Dashboard{
     }
     /**
      * @param string $path
+     * @param bool $scan
+     * @param int $chars
      * @return \Dashboard
      */
-    public static function create($path = '') {
-        return strlen($path) ? new Dashboard($path) : null;
+    public static function create($path = '',$scan  = false , $chars = 20) {
+        return strlen($path) ? new Dashboard($path,$scan,$chars) : null;
     }
     
     /**
@@ -193,21 +222,14 @@ class Dashboard{
         $dir = glob( $this->path(). '/*');
         foreach ($dir as $file ){
             $folder = preg_replace('/\\\\/', '/', $file);
-            if(is_dir($folder) && $folder !== $this->root()){
-                $name =  basename($folder);
-                if(!$this->excluded($name)){
+            $name =  basename($folder);
+            if(is_dir($folder)){
+                if(!$this->excluded($name) && $folder !== $this->root()){
                     $folders[] = $name;
                 }
             }
         }
         return $folders;
-        
-        $folders = !$this->isLib() ?
-                array_filter(glob( $this->path(). '/*'), 'is_dir') :
-                array();
-        return array_map( function($path){
-            return basename($path);
-        } ,$folders);
     }
     /**
      * @return array
